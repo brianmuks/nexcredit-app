@@ -14,33 +14,32 @@ import {
   AuthScreen,
 } from '@/components/auth';
 import { Button, Text } from '@/components/ui';
-import { loginSchema, parseLoginIdentifier, type LoginFormValues } from '@/lib/auth-schemas';
+import { phoneLoginSchema, type PhoneLoginFormValues } from '@/lib/auth-schemas';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/auth-store';
 import type { ApiError } from '@/types/auth';
 
 export default function LoginScreen() {
   const theme = useTheme();
-  const login = useAuthStore((s) => s.login);
+  const requestPhoneOtp = useAuthStore((s) => s.requestPhoneOtp);
   const [submitting, setSubmitting] = useState(false);
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { identifier: '', password: '' },
+  } = useForm<PhoneLoginFormValues>({
+    resolver: zodResolver(phoneLoginSchema),
+    defaultValues: { phone: '' },
   });
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = handleSubmit(async ({ phone }) => {
     setSubmitting(true);
     try {
-      const parsed = parseLoginIdentifier(values.identifier);
-      await login({ ...parsed, password: values.password });
-      router.replace('/(tabs)');
+      await requestPhoneOtp(phone, null);
+      router.push('/(auth)/verify-phone');
     } catch (err) {
-      const message = (err as ApiError).message ?? 'Sign in failed. Please try again.';
+      const message = (err as ApiError).message ?? 'Could not send code. Please try again.';
       Alert.alert('Sign in failed', message);
     } finally {
       setSubmitting(false);
@@ -55,55 +54,31 @@ export default function LoginScreen() {
     <AuthScreen>
       <AuthHeader
         title="Welcome Back"
-        subtitle="Access your premium credit suite"
+        subtitle="Sign in with your mobile number"
         logoWidth={100}
       />
 
       <AuthCard>
         <Controller
           control={control}
-          name="identifier"
+          name="phone"
           render={({ field: { onChange, onBlur, value } }) => (
             <AuthField
-              label="Phone or email"
-              placeholder="Enter your details"
-              leftIcon="person-outline"
-              autoCapitalize="none"
-              keyboardType="email-address"
+              label="Phone number"
+              placeholder="+260 97X XXX XXX"
+              leftIcon="call-outline"
+              keyboardType="phone-pad"
+              autoComplete="tel"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
-              error={errors.identifier?.message}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <AuthField
-              label="Password"
-              placeholder="••••••••"
-              leftIcon="lock-closed-outline"
-              secureTextEntry
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.password?.message}
-              labelRight={
-                <Link href="/(auth)/forgot-password" asChild>
-                  <Text variant="caption" color="primary" style={styles.forgot}>
-                    Forgot Password?
-                  </Text>
-                </Link>
-              }
+              error={errors.phone?.message}
             />
           )}
         />
 
         <Button
-          label="Sign In"
+          label="Send code"
           onPress={onSubmit}
           loading={submitting}
           fullWidth
@@ -144,16 +119,12 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  forgot: {
-    fontWeight: '600',
-  },
   signInBtn: {
     borderRadius: 16,
     marginTop: 4,
   },
   faceIdBtn: {
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
   },
   signUpRow: {
     flexDirection: 'row',

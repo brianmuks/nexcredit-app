@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,9 +19,12 @@ import { useAuthStore } from '@/store/auth-store';
 import type { ApiError } from '@/types/auth';
 
 const RESEND_SECONDS = 60;
+const COMPACT_HEIGHT = 700;
 
 export default function VerifyPhoneScreen() {
   const theme = useTheme();
+  const { height } = useWindowDimensions();
+  const isCompact = height < COMPACT_HEIGHT;
   const pendingPhone = useAuthStore((s) => s.pendingPhone);
   const verifyPhoneOtp = useAuthStore((s) => s.verifyPhoneOtp);
   const requestPhoneOtp = useAuthStore((s) => s.requestPhoneOtp);
@@ -39,6 +42,7 @@ export default function VerifyPhoneScreen() {
   });
 
   const code = watch('code');
+  const canSubmit = code.length === 6;
 
   useEffect(() => {
     if (!pendingPhone) {
@@ -81,27 +85,24 @@ export default function VerifyPhoneScreen() {
 
   return (
     <AuthScreen showBack>
-      <View style={styles.brandRow}>
-        <Text variant="h3">NexCredit</Text>
+      <View style={styles.header}>
+        <Text variant="label" color="primary">
+          NexCredit
+        </Text>
+        <Text variant={isCompact ? 'h2' : 'h1'} style={styles.title}>
+          Verify Phone
+        </Text>
+        <Text variant="body" color="secondary">
+          We&apos;ve sent a 6-digit code to {maskedPhone}.
+        </Text>
       </View>
 
-      <Text variant="h1" style={styles.title}>
-        Verify Phone
-      </Text>
-      <Text variant="body" color="secondary" style={styles.subtitle}>
-        We&apos;ve sent a 6-digit code to {maskedPhone}.
-      </Text>
-
-      <AuthCard>
+      <AuthCard style={styles.card}>
         <Controller
           control={control}
           name="code"
           render={({ field: { onChange, value } }) => (
-            <OtpInput
-              value={value}
-              onChange={onChange}
-              error={Boolean(errors.code)}
-            />
+            <OtpInput value={value} onChange={onChange} error={Boolean(errors.code)} />
           )}
         />
 
@@ -115,11 +116,17 @@ export default function VerifyPhoneScreen() {
           label="Verify & Proceed"
           onPress={onSubmit}
           loading={submitting}
-          disabled={code.length < 6}
+          disabled={!canSubmit}
           fullWidth
           size="lg"
           style={styles.verifyBtn}
-          rightIcon={<Ionicons name="lock-closed" size={16} color={theme.colors.onPrimary} />}
+          rightIcon={
+            <Ionicons
+              name="lock-closed"
+              size={16}
+              color={canSubmit ? theme.colors.onPrimary : theme.colors.textMuted}
+            />
+          }
         />
 
         <PressableResend secondsLeft={secondsLeft} onResend={handleResend} />
@@ -127,14 +134,16 @@ export default function VerifyPhoneScreen() {
 
       <SecurityBanner message="NexCredit uses bank-grade 256-bit encryption." />
 
-      <View style={[styles.sessionCard, { backgroundColor: theme.colors.secondary }]}>
-        <Text variant="caption" color="inverse" style={styles.sessionLabel}>
-          SECURE SESSION
-        </Text>
-        <Text variant="h3" color="inverse">
-          Verification Active
-        </Text>
-      </View>
+      {!isCompact ? (
+        <View style={[styles.sessionCard, { backgroundColor: theme.colors.primaryMuted }]}>
+          <Text variant="caption" color="primary" style={styles.sessionLabel}>
+            SECURE SESSION
+          </Text>
+          <Text variant="h3" color="default">
+            Verification Active
+          </Text>
+        </View>
+      ) : null}
 
       <AuthFooter variant="verify" />
     </AuthScreen>
@@ -151,43 +160,48 @@ function PressableResend({
   return (
     <View style={styles.resend}>
       <Text variant="bodySmall" color="secondary" align="center">
-        {secondsLeft > 0 ? 'Resend code in ' : 'Didn\u2019t get a code? '}
-        <Pressable onPress={onResend} disabled={secondsLeft > 0}>
-          <Text variant="label" color="primary">
-            {secondsLeft > 0 ? `0:${String(secondsLeft).padStart(2, '0')}` : 'Resend now'}
+        {secondsLeft > 0 ? `Resend code in 0:${String(secondsLeft).padStart(2, '0')}` : "Didn't get a code?"}
+      </Text>
+      {secondsLeft <= 0 ? (
+        <Pressable onPress={onResend} style={styles.resendAction}>
+          <Text variant="label" color="primary" align="center">
+            Resend now
           </Text>
         </Pressable>
-      </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  brandRow: {
-    marginBottom: 8,
+  header: {
+    gap: 8,
+    marginBottom: 20,
   },
   title: {
-    marginBottom: 8,
+    marginTop: 4,
   },
-  subtitle: {
-    marginBottom: 20,
+  card: {
+    gap: 16,
   },
   verifyBtn: {
     borderRadius: 16,
   },
   resend: {
-    marginTop: 4,
+    gap: 4,
+    alignItems: 'center',
+  },
+  resendAction: {
+    paddingVertical: 4,
   },
   sessionCard: {
     borderRadius: 16,
     padding: 20,
-    marginTop: 20,
-    minHeight: 100,
-    justifyContent: 'flex-end',
+    marginTop: 16,
+    gap: 4,
   },
   sessionLabel: {
     letterSpacing: 1,
-    marginBottom: 4,
-    opacity: 0.8,
+    fontWeight: '600',
   },
 });

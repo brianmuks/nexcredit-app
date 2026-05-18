@@ -4,8 +4,9 @@ import type { ApiError } from '@/types/auth';
 
 export const TOKEN_KEY = 'auth_token';
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000/api';
+/** Production API — override with EXPO_PUBLIC_API_URL in .env for local backends. */
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? 'https://www.funsa.online/api/v1';
 
 type RequestOptions = RequestInit & {
   auth?: boolean;

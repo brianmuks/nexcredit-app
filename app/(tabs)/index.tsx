@@ -25,7 +25,7 @@ export default function HomeScreen() {
         <Text variant="label" color="muted">
           Signed in as
         </Text>
-        <Text variant="body">{user?.email}</Text>
+        <Text variant="body">{user?.phone}</Text>
         <Text variant="caption" color="secondary" style={styles.role}>
           Role: {user?.role}
         </Text>

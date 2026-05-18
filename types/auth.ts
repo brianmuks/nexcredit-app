@@ -2,29 +2,21 @@ export type UserRole = 'borrower' | 'lender' | 'rep';
 
 export type User = {
   id: string;
-  email: string;
   firstName: string;
   lastName: string;
   phone: string;
   role: UserRole;
+  campus?: string;
   studentId?: string;
   isBcVerified?: boolean;
 };
 
-export type LoginInput = {
-  email?: string;
-  phone?: string;
-  password: string;
-};
-
 export type RegisterInput = {
-  email: string;
   firstName: string;
   lastName: string;
   phone: string;
   campus: string;
   role?: UserRole;
-  password?: string;
 };
 
 export type PhoneOtpRequestInput = {

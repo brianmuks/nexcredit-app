@@ -8,13 +8,10 @@ import {
 } from '@/lib/api-client';
 import {
   fetchCurrentUser,
-  forgotPasswordApi,
-  loginApi,
-  registerApi,
   requestPhoneOtpApi,
   verifyPhoneOtpApi,
 } from '@/lib/auth-api';
-import type { LoginInput, RegisterInput, User } from '@/types/auth';
+import type { RegisterInput, User } from '@/types/auth';
 
 const USER_KEY = 'auth_user';
 
@@ -24,13 +21,10 @@ type AuthState = {
   isLoading: boolean;
   pendingPhone: string | null;
   pendingRegistration: RegisterInput | null;
-  login: (input: LoginInput) => Promise<void>;
-  register: (input: RegisterInput) => Promise<void>;
-  requestPhoneOtp: (phone: string) => Promise<void>;
+  requestPhoneOtp: (phone: string, registration?: RegisterInput | null) => Promise<void>;
   verifyPhoneOtp: (code: string) => Promise<void>;
   setPendingRegistration: (input: RegisterInput | null) => void;
   logout: () => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
   hydrate: () => Promise<void>;
   setUser: (user: User | null) => Promise<void>;
 };
@@ -62,23 +56,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
-  login: async (input) => {
-    const { token, user } = await loginApi(input);
-    await setStoredToken(token);
-    await persistUser(user);
-    set({ user, isAuthenticated: true, pendingPhone: null, pendingRegistration: null });
-  },
-
-  register: async (input) => {
-    const { token, user } = await registerApi(input);
-    await setStoredToken(token);
-    await persistUser(user);
-    set({ user, isAuthenticated: true, pendingPhone: null, pendingRegistration: null });
-  },
-
-  requestPhoneOtp: async (phone) => {
+  requestPhoneOtp: async (phone, registration) => {
     await requestPhoneOtpApi({ phone });
-    set({ pendingPhone: phone });
+    set({
+      pendingPhone: phone,
+      pendingRegistration:
+        registration !== undefined ? registration : get().pendingRegistration,
+    });
   },
 
   verifyPhoneOtp: async (code) => {
@@ -110,10 +94,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       pendingPhone: null,
       pendingRegistration: null,
     });
-  },
-
-  forgotPassword: async (email) => {
-    await forgotPasswordApi(email);
   },
 
   hydrate: async () => {

@@ -1,64 +1,35 @@
 import { apiRequest, setStoredToken } from '@/lib/api-client';
 import type {
   AuthResponse,
-  LoginInput,
   PhoneOtpRequestInput,
   PhoneOtpVerifyInput,
   RegisterInput,
   User,
 } from '@/types/auth';
 
-/** Wire to Flask backend when available. Falls back to mock in __DEV__ without API. */
-const USE_MOCK = __DEV__ && !process.env.EXPO_PUBLIC_API_URL;
+/**
+ * Mock auth when the API is not ready.
+ * - Defaults to ON in development (__DEV__)
+ * - Set EXPO_PUBLIC_USE_MOCK_AUTH=false in .env to call the real API while developing
+ * - Set EXPO_PUBLIC_USE_MOCK_AUTH=true to force mock in production builds (not recommended)
+ */
+export const isMockAuthEnabled =
+  process.env.EXPO_PUBLIC_USE_MOCK_AUTH === 'true' ||
+  (__DEV__ && process.env.EXPO_PUBLIC_USE_MOCK_AUTH !== 'false');
+
+const USE_MOCK = isMockAuthEnabled;
 
 function mockAuthResponse(partial: Partial<User>): AuthResponse {
   const user: User = {
     id: 'mock-user-1',
-    email: partial.email ?? 'demo@unza.ac.zm',
     firstName: partial.firstName ?? 'Demo',
     lastName: partial.lastName ?? 'User',
     phone: partial.phone ?? '+260970000000',
     role: partial.role ?? 'borrower',
+    campus: partial.campus,
     isBcVerified: false,
   };
   return { token: 'mock-jwt-token', user };
-}
-
-export async function loginApi(input: LoginInput): Promise<AuthResponse> {
-  if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 600));
-    return mockAuthResponse({
-      email: input.email,
-      phone: input.phone,
-    });
-  }
-
-  const data = await apiRequest<AuthResponse>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
-  await setStoredToken(data.token);
-  return data;
-}
-
-export async function registerApi(input: RegisterInput): Promise<AuthResponse> {
-  if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 800));
-    return mockAuthResponse({
-      email: input.email,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      phone: input.phone,
-      role: input.role,
-    });
-  }
-
-  const data = await apiRequest<AuthResponse>('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
-  await setStoredToken(data.token);
-  return data;
 }
 
 export async function requestPhoneOtpApi(input: PhoneOtpRequestInput): Promise<void> {
@@ -81,10 +52,10 @@ export async function verifyPhoneOtpApi(
     await new Promise((r) => setTimeout(r, 600));
     if (registration) {
       return mockAuthResponse({
-        email: registration.email,
         firstName: registration.firstName,
         lastName: registration.lastName,
         phone: registration.phone,
+        campus: registration.campus,
         role: registration.role,
       });
     }
@@ -97,18 +68,6 @@ export async function verifyPhoneOtpApi(
   });
   await setStoredToken(data.token);
   return data;
-}
-
-export async function forgotPasswordApi(email: string): Promise<void> {
-  if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 500));
-    return;
-  }
-
-  await apiRequest('/auth/forgot-password', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  });
 }
 
 export async function fetchCurrentUser(): Promise<User | null> {

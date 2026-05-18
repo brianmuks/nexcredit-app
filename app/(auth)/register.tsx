@@ -21,10 +21,9 @@ import {
   type RegisterFormValues,
 } from '@/lib/auth-schemas';
 import { useAuthStore } from '@/store/auth-store';
-import type { ApiError } from '@/types/auth';
+import type { ApiError, RegisterInput } from '@/types/auth';
 
 export default function RegisterScreen() {
-  const setPendingRegistration = useAuthStore((s) => s.setPendingRegistration);
   const requestPhoneOtp = useAuthStore((s) => s.requestPhoneOtp);
   const [submitting, setSubmitting] = useState(false);
 
@@ -39,7 +38,6 @@ export default function RegisterScreen() {
     defaultValues: {
       fullName: '',
       phone: '',
-      email: '',
     },
   });
 
@@ -49,17 +47,15 @@ export default function RegisterScreen() {
     setSubmitting(true);
     try {
       const { firstName, lastName } = splitFullName(values.fullName);
-      const registration = {
+      const registration: RegisterInput = {
         firstName,
         lastName,
-        email: values.email,
         phone: values.phone,
         campus: values.campus,
-        role: 'borrower' as const,
+        role: 'borrower',
       };
 
-      setPendingRegistration(registration);
-      await requestPhoneOtp(values.phone);
+      await requestPhoneOtp(values.phone, registration);
       router.push('/(auth)/verify-phone');
     } catch (err) {
       const message = (err as ApiError).message ?? 'Could not continue. Please try again.';
@@ -109,24 +105,6 @@ export default function RegisterScreen() {
               onChangeText={onChange}
               onBlur={onBlur}
               error={errors.phone?.message}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <AuthField
-              label="Email address"
-              placeholder="jane.b@university.edu"
-              leftIcon="mail-outline"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.email?.message}
             />
           )}
         />

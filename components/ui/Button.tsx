@@ -2,13 +2,13 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  Text as RNText,
   View,
   type PressableProps,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
-import { Text } from '@/components/ui/Text';
 import { useTheme } from '@/hooks/useTheme';
 import type { SemanticColors } from '@/theme';
 
@@ -41,7 +41,7 @@ export function Button({
   const theme = useTheme();
   const isDisabled = disabled || loading;
 
-  const variantStyles = getVariantStyles(theme.colors, variant);
+  const variantStyles = getVariantStyles(theme.colors, variant, isDisabled);
   const sizeStyles = sizeMap[size];
 
   return (
@@ -54,7 +54,6 @@ export function Button({
         sizeStyles.container,
         fullWidth ? styles.fullWidth : undefined,
         pressed && !isDisabled ? styles.pressed : undefined,
-        isDisabled ? styles.disabled : undefined,
         styleProp,
       ]}
       {...props}>
@@ -63,11 +62,14 @@ export function Button({
       ) : (
         <View style={styles.content}>
           {leftIcon}
-          <Text
-            variant={size === 'sm' ? 'label' : 'body'}
-            style={[styles.label, { color: variantStyles.text }, sizeStyles.text]}>
+          <RNText
+            style={[
+              theme.typography[size === 'sm' ? 'label' : 'body'],
+              sizeStyles.text,
+              { color: variantStyles.text },
+            ]}>
             {label}
-          </Text>
+          </RNText>
           {rightIcon}
         </View>
       )}
@@ -75,7 +77,19 @@ export function Button({
   );
 }
 
-function getVariantStyles(colors: SemanticColors, variant: ButtonVariant) {
+function getVariantStyles(
+  colors: SemanticColors,
+  variant: ButtonVariant,
+  disabled: boolean,
+) {
+  if (disabled && variant === 'primary') {
+    return {
+      container: { backgroundColor: colors.primaryMuted, borderWidth: 0 },
+      text: colors.textMuted,
+      spinnerColor: colors.textMuted,
+    };
+  }
+
   switch (variant) {
     case 'secondary':
       return {
@@ -92,9 +106,9 @@ function getVariantStyles(colors: SemanticColors, variant: ButtonVariant) {
     case 'outline':
       return {
         container: {
-          backgroundColor: 'transparent',
+          backgroundColor: colors.surface,
           borderWidth: 1.5,
-          borderColor: colors.secondary,
+          borderColor: colors.border,
         },
         text: colors.text,
         spinnerColor: colors.text,
@@ -138,13 +152,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  label: {
-    fontFamily: undefined,
-  },
   pressed: {
     opacity: 0.88,
-  },
-  disabled: {
-    opacity: 0.5,
   },
 });

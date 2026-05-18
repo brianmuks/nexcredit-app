@@ -18,7 +18,7 @@ export function OtpInput({ value, onChange, error }: OtpInputProps) {
   const digits = Array.from({ length: OTP_LENGTH }, (_, i) => value[i] ?? '');
 
   return (
-    <View>
+    <View style={styles.wrapper}>
       <TextInput
         ref={inputRef}
         value={value}
@@ -29,31 +29,48 @@ export function OtpInput({ value, onChange, error }: OtpInputProps) {
         maxLength={OTP_LENGTH}
         style={styles.hiddenInput}
         autoFocus
+        accessibilityLabel="One-time passcode"
       />
 
       <View style={styles.row}>
-        {digits.map((digit, index) => (
-          <Pressable
-            key={index}
-            onPress={() => inputRef.current?.focus()}
-            style={[
-              styles.cell,
-              {
-                borderColor: error ? theme.colors.error : theme.colors.border,
-                backgroundColor: theme.colors.inputBackground,
-              },
-            ]}>
-            <Text variant="h3" align="center">
-              {digit ? '•' : ''}
-            </Text>
-          </Pressable>
-        ))}
+        {digits.map((digit, index) => {
+          const filled = Boolean(digit);
+          const focused = value.length === index;
+
+          return (
+            <Pressable
+              key={index}
+              onPress={() => inputRef.current?.focus()}
+              style={[
+                styles.cell,
+                {
+                  borderColor: error
+                    ? theme.colors.error
+                    : focused
+                      ? theme.colors.primary
+                      : theme.colors.border,
+                  backgroundColor: theme.colors.surface,
+                },
+              ]}>
+              <Text
+                variant="body"
+                align="center"
+                color={filled ? 'default' : 'muted'}
+                style={styles.digit}>
+                {filled ? '•' : '–'}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    width: '100%',
+  },
   hiddenInput: {
     position: 'absolute',
     opacity: 0,
@@ -63,15 +80,23 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 8,
+    alignItems: 'center',
+    gap: 6,
+    width: '100%',
   },
   cell: {
     flex: 1,
+    maxWidth: 52,
+    minWidth: 36,
     aspectRatio: 1,
-    maxWidth: 48,
     borderRadius: 12,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  digit: {
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: '600',
   },
 });
