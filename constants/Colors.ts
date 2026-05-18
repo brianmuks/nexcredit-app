@@ -1,19 +1,22 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+/**
+ * @deprecated Prefer `useTheme()` from `@/hooks/useTheme` for new code.
+ * Kept for compatibility with the Expo tabs template.
+ */
+import { lightTheme, darkTheme } from '@/theme';
 
 export default {
   light: {
-    text: '#000',
-    background: '#fff',
-    tint: tintColorLight,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorLight,
+    text: lightTheme.colors.text,
+    background: lightTheme.colors.background,
+    tint: lightTheme.colors.primary,
+    tabIconDefault: lightTheme.colors.tabInactive,
+    tabIconSelected: lightTheme.colors.tabActive,
   },
   dark: {
-    text: '#fff',
-    background: '#000',
-    tint: tintColorDark,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorDark,
+    text: darkTheme.colors.text,
+    background: darkTheme.colors.background,
+    tint: darkTheme.colors.primary,
+    tabIconDefault: darkTheme.colors.tabInactive,
+    tabIconSelected: darkTheme.colors.tabActive,
   },
 };

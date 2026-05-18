@@ -49,6 +49,12 @@ These are explicitly deferred. See [SRS v2.0](./docs/HelsB_Credit_SRS_v2.0.docx)
 
 ---
 
+## Design
+
+UI mockups and screen designs: [Stitch project](https://stitch.withgoogle.com/projects/11582025858098161789)
+
+---
+
 ## Prerequisites
 
 - Python 3.10+
