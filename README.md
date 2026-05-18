@@ -35,7 +35,7 @@ Students on HELSB bursaries and stipends lend to each other informally. Today th
 - ❌ Not a mobile money integration
 - ❌ Not a HELSB API consumer (BC register is maintained manually by the student rep)
 
-These are explicitly deferred. See [SRS v2.0](./docs/HelsB_Credit_SRS_v2.0.docx) for the full rationale.
+These are explicitly deferred. See [SRS v2.0]([./docs/HelsB_Credit_SRS_v2.0.docx](https://docs.google.com/document/d/1hIftvbS3OqSO-JR0shBdsTNDkd2FEST-GAyLS3RC86s/edit?usp=sharing)) for the full rationale.
 
 ---
 
