@@ -12,18 +12,28 @@ export type User = {
 };
 
 export type LoginInput = {
-  email: string;
+  email?: string;
+  phone?: string;
   password: string;
 };
 
 export type RegisterInput = {
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
   phone: string;
-  role: UserRole;
-  studentId?: string;
+  campus: string;
+  role?: UserRole;
+  password?: string;
+};
+
+export type PhoneOtpRequestInput = {
+  phone: string;
+};
+
+export type PhoneOtpVerifyInput = {
+  phone: string;
+  code: string;
 };
 
 export type AuthResponse = {

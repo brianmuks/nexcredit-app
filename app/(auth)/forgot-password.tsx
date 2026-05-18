@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { AuthHeader } from '@/components/auth/AuthHeader';
-import { Button, Screen, Text, TextField } from '@/components/ui';
+import { AuthCard, AuthField, AuthFooter, AuthHeader, AuthScreen } from '@/components/auth';
+import { Button, Text } from '@/components/ui';
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from '@/lib/auth-schemas';
 import { useAuthStore } from '@/store/auth-store';
 import type { ApiError } from '@/types/auth';
@@ -30,15 +30,14 @@ export default function ForgotPasswordScreen() {
       await forgotPassword(email);
       setSent(true);
     } catch (err) {
-      const message = (err as ApiError).message ?? 'Could not send reset link.';
-      Alert.alert('Request failed', message);
+      Alert.alert('Request failed', (err as ApiError).message ?? 'Try again later.');
     } finally {
       setSubmitting(false);
     }
   });
 
   return (
-    <Screen>
+    <AuthScreen showBack>
       <AuthHeader
         title="Reset password"
         subtitle={
@@ -46,17 +45,19 @@ export default function ForgotPasswordScreen() {
             ? 'Check your email for a reset link.'
             : 'Enter your email and we will send you a reset link'
         }
+        logoWidth={80}
       />
 
       {!sent ? (
-        <View style={styles.form}>
+        <AuthCard>
           <Controller
             control={control}
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextField
+              <AuthField
                 label="Email"
-                placeholder="you@university.ac.zm"
+                placeholder="you@university.edu"
+                leftIcon="mail-outline"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={value}
@@ -67,26 +68,31 @@ export default function ForgotPasswordScreen() {
             )}
           />
 
-          <Button label="Send reset link" onPress={onSubmit} loading={submitting} fullWidth />
-        </View>
+          <Button
+            label="Send reset link"
+            onPress={onSubmit}
+            loading={submitting}
+            fullWidth
+            size="lg"
+            style={styles.btn}
+          />
+        </AuthCard>
       ) : (
-        <Button label="Back to sign in" onPress={() => router.replace('/(auth)/login')} fullWidth />
+        <Button
+          label="Back to sign in"
+          onPress={() => router.replace('/(auth)/login')}
+          fullWidth
+          size="lg"
+        />
       )}
 
-      <Link href="/(auth)/login" asChild>
-        <Text variant="label" color="primary" align="center" style={styles.back}>
-          Back to sign in
-        </Text>
-      </Link>
-    </Screen>
+      <AuthFooter variant="login" />
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  form: {
-    gap: 16,
-  },
-  back: {
-    marginTop: 24,
+  btn: {
+    borderRadius: 16,
   },
 });

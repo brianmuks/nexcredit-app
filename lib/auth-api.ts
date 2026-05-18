@@ -1,5 +1,12 @@
 import { apiRequest, setStoredToken } from '@/lib/api-client';
-import type { AuthResponse, LoginInput, RegisterInput, User } from '@/types/auth';
+import type {
+  AuthResponse,
+  LoginInput,
+  PhoneOtpRequestInput,
+  PhoneOtpVerifyInput,
+  RegisterInput,
+  User,
+} from '@/types/auth';
 
 /** Wire to Flask backend when available. Falls back to mock in __DEV__ without API. */
 const USE_MOCK = __DEV__ && !process.env.EXPO_PUBLIC_API_URL;
@@ -12,7 +19,6 @@ function mockAuthResponse(partial: Partial<User>): AuthResponse {
     lastName: partial.lastName ?? 'User',
     phone: partial.phone ?? '+260970000000',
     role: partial.role ?? 'borrower',
-    studentId: partial.studentId,
     isBcVerified: false,
   };
   return { token: 'mock-jwt-token', user };
@@ -21,7 +27,10 @@ function mockAuthResponse(partial: Partial<User>): AuthResponse {
 export async function loginApi(input: LoginInput): Promise<AuthResponse> {
   if (USE_MOCK) {
     await new Promise((r) => setTimeout(r, 600));
-    return mockAuthResponse({ email: input.email });
+    return mockAuthResponse({
+      email: input.email,
+      phone: input.phone,
+    });
   }
 
   const data = await apiRequest<AuthResponse>('/auth/login', {
@@ -41,13 +50,50 @@ export async function registerApi(input: RegisterInput): Promise<AuthResponse> {
       lastName: input.lastName,
       phone: input.phone,
       role: input.role,
-      studentId: input.studentId,
     });
   }
 
   const data = await apiRequest<AuthResponse>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(input),
+  });
+  await setStoredToken(data.token);
+  return data;
+}
+
+export async function requestPhoneOtpApi(input: PhoneOtpRequestInput): Promise<void> {
+  if (USE_MOCK) {
+    await new Promise((r) => setTimeout(r, 400));
+    return;
+  }
+
+  await apiRequest('/auth/phone/request-otp', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function verifyPhoneOtpApi(
+  input: PhoneOtpVerifyInput,
+  registration?: RegisterInput,
+): Promise<AuthResponse> {
+  if (USE_MOCK) {
+    await new Promise((r) => setTimeout(r, 600));
+    if (registration) {
+      return mockAuthResponse({
+        email: registration.email,
+        firstName: registration.firstName,
+        lastName: registration.lastName,
+        phone: registration.phone,
+        role: registration.role,
+      });
+    }
+    return mockAuthResponse({ phone: input.phone });
+  }
+
+  const data = await apiRequest<AuthResponse>('/auth/phone/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ ...input, registration }),
   });
   await setStoredToken(data.token);
   return data;

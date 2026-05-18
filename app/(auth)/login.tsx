@@ -1,16 +1,26 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Ionicons } from '@expo/vector-icons';
 
-import { AuthHeader } from '@/components/auth/AuthHeader';
-import { Button, Screen, Text, TextField } from '@/components/ui';
-import { loginSchema, type LoginFormValues } from '@/lib/auth-schemas';
+import {
+  AuthCard,
+  AuthDivider,
+  AuthField,
+  AuthFooter,
+  AuthHeader,
+  AuthScreen,
+} from '@/components/auth';
+import { Button, Text } from '@/components/ui';
+import { loginSchema, parseLoginIdentifier, type LoginFormValues } from '@/lib/auth-schemas';
+import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/auth-store';
 import type { ApiError } from '@/types/auth';
 
 export default function LoginScreen() {
+  const theme = useTheme();
   const login = useAuthStore((s) => s.login);
   const [submitting, setSubmitting] = useState(false);
 
@@ -20,44 +30,50 @@ export default function LoginScreen() {
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { identifier: '', password: '' },
   });
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitting(true);
     try {
-      await login(values);
+      const parsed = parseLoginIdentifier(values.identifier);
+      await login({ ...parsed, password: values.password });
       router.replace('/(tabs)');
     } catch (err) {
-      const message = (err as ApiError).message ?? 'Login failed. Please try again.';
+      const message = (err as ApiError).message ?? 'Sign in failed. Please try again.';
       Alert.alert('Sign in failed', message);
     } finally {
       setSubmitting(false);
     }
   });
 
+  const handleFaceId = () => {
+    Alert.alert('Face ID', 'Biometric sign-in will be available in a future update.');
+  };
+
   return (
-    <Screen>
+    <AuthScreen>
       <AuthHeader
-        title="Welcome back"
-        subtitle="Sign in to check loans and manage your ledger"
+        title="Welcome Back"
+        subtitle="Access your premium credit suite"
+        logoWidth={100}
       />
 
-      <View style={styles.form}>
+      <AuthCard>
         <Controller
           control={control}
-          name="email"
+          name="identifier"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Email"
-              placeholder="you@university.ac.zm"
-              keyboardType="email-address"
+            <AuthField
+              label="Phone or email"
+              placeholder="Enter your details"
+              leftIcon="person-outline"
               autoCapitalize="none"
-              autoComplete="email"
+              keyboardType="email-address"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
-              error={errors.email?.message}
+              error={errors.identifier?.message}
             />
           )}
         />
@@ -66,55 +82,84 @@ export default function LoginScreen() {
           control={control}
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
+            <AuthField
               label="Password"
-              placeholder="Enter your password"
+              placeholder="••••••••"
+              leftIcon="lock-closed-outline"
               secureTextEntry
-              autoComplete="password"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               error={errors.password?.message}
+              labelRight={
+                <Link href="/(auth)/forgot-password" asChild>
+                  <Text variant="caption" color="primary" style={styles.forgot}>
+                    Forgot Password?
+                  </Text>
+                </Link>
+              }
             />
           )}
         />
 
-        <Link href="/(auth)/forgot-password" asChild>
-          <Text variant="label" color="primary" style={styles.forgotLink}>
-            Forgot password?
-          </Text>
-        </Link>
+        <Button
+          label="Sign In"
+          onPress={onSubmit}
+          loading={submitting}
+          fullWidth
+          size="lg"
+          style={styles.signInBtn}
+          rightIcon={<Ionicons name="arrow-forward" size={18} color={theme.colors.onPrimary} />}
+        />
+      </AuthCard>
 
-        <Button label="Sign in" onPress={onSubmit} loading={submitting} fullWidth />
+      <AuthDivider label="Or secure with" />
 
-        <View style={styles.footer}>
-          <Text variant="bodySmall" color="secondary">
-            Don&apos;t have an account?{' '}
-          </Text>
-          <Link href="/(auth)/register" asChild>
+      <Button
+        label="Sign in with FaceID"
+        variant="outline"
+        fullWidth
+        size="lg"
+        onPress={handleFaceId}
+        leftIcon={<Ionicons name="scan-outline" size={22} color={theme.colors.primary} />}
+        style={styles.faceIdBtn}
+      />
+
+      <View style={styles.signUpRow}>
+        <Text variant="bodySmall" color="secondary">
+          New to NexCredit?{' '}
+        </Text>
+        <Link href="/(auth)/register" asChild>
+          <Pressable>
             <Text variant="label" color="primary">
-              Create account
+              Create an account
             </Text>
-          </Link>
-        </View>
+          </Pressable>
+        </Link>
       </View>
-    </Screen>
+
+      <AuthFooter variant="login" />
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  form: {
-    gap: 16,
+  forgot: {
+    fontWeight: '600',
   },
-  forgotLink: {
-    alignSelf: 'flex-end',
-    marginTop: -4,
+  signInBtn: {
+    borderRadius: 16,
+    marginTop: 4,
   },
-  footer: {
+  faceIdBtn: {
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  signUpRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 20,
     flexWrap: 'wrap',
   },
 });

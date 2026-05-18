@@ -4,22 +4,28 @@ import { Link, router } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { AuthHeader } from '@/components/auth/AuthHeader';
-import { Button, Screen, Text, TextField } from '@/components/ui';
-import { registerSchema, type RegisterFormValues } from '@/lib/auth-schemas';
-import { useTheme } from '@/hooks/useTheme';
+import {
+  AuthField,
+  AuthFooter,
+  AuthHeader,
+  AuthScreen,
+  CampusPicker,
+  PromoCard,
+  SecurityBanner,
+} from '@/components/auth';
+import { Button, Text } from '@/components/ui';
+import type { CampusValue } from '@/constants/campuses';
+import {
+  registerSchema,
+  splitFullName,
+  type RegisterFormValues,
+} from '@/lib/auth-schemas';
 import { useAuthStore } from '@/store/auth-store';
-import type { ApiError, UserRole } from '@/types/auth';
-
-const ROLES: { value: UserRole; label: string }[] = [
-  { value: 'borrower', label: 'Borrower' },
-  { value: 'lender', label: 'Lender' },
-  { value: 'rep', label: 'Student rep' },
-];
+import type { ApiError } from '@/types/auth';
 
 export default function RegisterScreen() {
-  const theme = useTheme();
-  const register = useAuthStore((s) => s.register);
+  const setPendingRegistration = useAuthStore((s) => s.setPendingRegistration);
+  const requestPhoneOtp = useAuthStore((s) => s.requestPhoneOtp);
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -31,87 +37,61 @@ export default function RegisterScreen() {
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
+      fullName: '',
       phone: '',
-      studentId: '',
-      role: 'borrower',
-      password: '',
-      confirmPassword: '',
+      email: '',
     },
   });
 
-  const selectedRole = watch('role');
+  const campus = watch('campus');
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitting(true);
     try {
-      const { confirmPassword: _, ...input } = values;
-      await register(input);
-      router.replace('/(tabs)');
+      const { firstName, lastName } = splitFullName(values.fullName);
+      const registration = {
+        firstName,
+        lastName,
+        email: values.email,
+        phone: values.phone,
+        campus: values.campus,
+        role: 'borrower' as const,
+      };
+
+      setPendingRegistration(registration);
+      await requestPhoneOtp(values.phone);
+      router.push('/(auth)/verify-phone');
     } catch (err) {
-      const message = (err as ApiError).message ?? 'Registration failed. Please try again.';
-      Alert.alert('Sign up failed', message);
+      const message = (err as ApiError).message ?? 'Could not continue. Please try again.';
+      Alert.alert('Registration failed', message);
     } finally {
       setSubmitting(false);
     }
   });
 
   return (
-    <Screen contentContainerStyle={styles.scroll}>
+    <AuthScreen showBack>
       <AuthHeader
-        title="Join nexcredit"
-        subtitle="Create an account to lend and borrow with transparency"
+        title="Create Account"
+        subtitle="Elevate your financial lifestyle today."
+        logoWidth={72}
+        compact
+        showLogo
       />
 
       <View style={styles.form}>
-        <View style={styles.row}>
-          <Controller
-            control={control}
-            name="firstName"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextField
-                label="First name"
-                placeholder="Jane"
-                containerStyle={styles.half}
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.firstName?.message}
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="lastName"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextField
-                label="Last name"
-                placeholder="Banda"
-                containerStyle={styles.half}
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.lastName?.message}
-              />
-            )}
-          />
-        </View>
-
         <Controller
           control={control}
-          name="email"
+          name="fullName"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Email"
-              placeholder="you@university.ac.zm"
-              keyboardType="email-address"
-              autoCapitalize="none"
+            <AuthField
+              label="Full name"
+              placeholder="Jane Banda"
+              leftIcon="person-outline"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
-              error={errors.email?.message}
+              error={errors.fullName?.message}
             />
           )}
         />
@@ -120,9 +100,10 @@ export default function RegisterScreen() {
           control={control}
           name="phone"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Phone"
+            <AuthField
+              label="Phone number"
               placeholder="+260 97X XXX XXX"
+              leftIcon="call-outline"
               keyboardType="phone-pad"
               value={value}
               onChangeText={onChange}
@@ -134,138 +115,71 @@ export default function RegisterScreen() {
 
         <Controller
           control={control}
-          name="studentId"
+          name="email"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Student ID (optional)"
-              placeholder="BC / student number"
+            <AuthField
+              label="Email address"
+              placeholder="jane.b@university.edu"
+              leftIcon="mail-outline"
+              keyboardType="email-address"
+              autoCapitalize="none"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
-              error={errors.studentId?.message}
+              error={errors.email?.message}
             />
           )}
         />
 
-        <View>
-          <Text variant="label" color="secondary" style={styles.roleLabel}>
-            I am a
-          </Text>
-          <View style={styles.roleRow}>
-            {ROLES.map((role) => {
-              const active = selectedRole === role.value;
-              return (
-                <Pressable
-                  key={role.value}
-                  onPress={() => setValue('role', role.value, { shouldValidate: true })}
-                  style={[
-                    styles.roleChip,
-                    {
-                      backgroundColor: active
-                        ? theme.colors.primary
-                        : theme.colors.inputBackground,
-                      borderColor: active ? theme.colors.primary : theme.colors.border,
-                    },
-                  ]}>
-                  <Text variant="label" color={active ? 'inverse' : 'default'}>
-                    {role.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          {errors.role?.message ? (
-            <Text variant="caption" color="error" style={styles.roleError}>
-              {errors.role.message}
-            </Text>
-          ) : null}
-        </View>
-
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Password"
-              placeholder="At least 6 characters"
-              secureTextEntry
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.password?.message}
-            />
-          )}
+        <CampusPicker
+          value={campus as CampusValue | undefined}
+          onChange={(v) => setValue('campus', v, { shouldValidate: true })}
+          error={errors.campus?.message}
         />
 
-        <Controller
-          control={control}
-          name="confirmPassword"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Confirm password"
-              placeholder="Repeat password"
-              secureTextEntry
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.confirmPassword?.message}
-            />
-          )}
+        <SecurityBanner />
+
+        <Button
+          label="Continue"
+          onPress={onSubmit}
+          loading={submitting}
+          fullWidth
+          size="lg"
+          style={styles.continueBtn}
         />
 
-        <Button label="Create account" onPress={onSubmit} loading={submitting} fullWidth />
-
-        <View style={styles.footer}>
+        <View style={styles.loginRow}>
           <Text variant="bodySmall" color="secondary">
             Already have an account?{' '}
           </Text>
           <Link href="/(auth)/login" asChild>
-            <Text variant="label" color="primary">
-              Sign in
-            </Text>
+            <Pressable>
+              <Text variant="label" color="primary">
+                Login
+              </Text>
+            </Pressable>
           </Link>
         </View>
+
+        <PromoCard />
       </View>
-    </Screen>
+
+      <AuthFooter variant="register" />
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingBottom: 48,
-  },
   form: {
     gap: 16,
   },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
+  continueBtn: {
+    borderRadius: 16,
+    marginTop: 4,
   },
-  half: {
-    flex: 1,
-  },
-  roleLabel: {
-    marginBottom: 8,
-  },
-  roleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  roleChip: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-  },
-  roleError: {
-    marginTop: 6,
-  },
-  footer: {
+  loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
     flexWrap: 'wrap',
   },
 });

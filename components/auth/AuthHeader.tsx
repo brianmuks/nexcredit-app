@@ -1,26 +1,31 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Logo } from '@/components/brand';
 import { Text } from '@/components/ui/Text';
-import { useTheme } from '@/hooks/useTheme';
 
 type AuthHeaderProps = {
   title: string;
   subtitle?: string;
+  showLogo?: boolean;
+  logoWidth?: number;
+  compact?: boolean;
 };
 
-export function AuthHeader({ title, subtitle }: AuthHeaderProps) {
-  const theme = useTheme();
-
+export function AuthHeader({
+  title,
+  subtitle,
+  showLogo = true,
+  logoWidth = 120,
+  compact = false,
+}: AuthHeaderProps) {
   return (
-    <View style={styles.container}>
-      <View style={[styles.logoMark, { backgroundColor: theme.colors.primary }]}>
-        <Text variant="h2" color="inverse" style={styles.logoText}>
-          n
-        </Text>
-      </View>
-      <Text variant="display" style={styles.title}>
+    <View style={[styles.container, compact && styles.compact]}>
+      {showLogo ? <Logo width={logoWidth} /> : null}
+
+      <Text variant={compact ? 'h2' : 'h1'} align="center">
         {title}
       </Text>
+
       {subtitle ? (
         <Text variant="body" color="secondary" align="center">
           {subtitle}
@@ -34,19 +39,11 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     gap: 12,
-    marginBottom: 32,
+    marginBottom: 24,
+    marginTop: 8,
   },
-  logoMark: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    textTransform: 'lowercase',
-  },
-  title: {
-    textAlign: 'center',
+  compact: {
+    marginBottom: 16,
+    alignItems: 'flex-start',
   },
 });

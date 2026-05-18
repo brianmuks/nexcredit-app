@@ -126,7 +126,7 @@ const sizeMap = {
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
