@@ -10,45 +10,51 @@ import {
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
+import { SCREEN_EXTRA_TOP_PADDING, SCREEN_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useScreenInsets } from '@/hooks/useScreenInsets';
 import { useTheme } from '@/hooks/useTheme';
-import { SCREEN_EXTRA_TOP_PADDING } from '@/constants/layout';
 
 type ScreenProps = {
   children: React.ReactNode;
   scrollable?: boolean;
+  /** Safe area edges for the screen shell. Top is always recommended. */
   edges?: Edge[];
   contentContainerStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
   keyboardAvoiding?: boolean;
-  /** Additional top padding below the safe area (defaults to app standard). */
+  /** Extra padding below the status bar / notch (in addition to SafeAreaView top inset). */
   extraTopPadding?: number;
+  /** Include bottom safe area inset in content (disable inside tab navigator — tab bar handles it). */
+  safeBottom?: boolean;
 } & Pick<ScrollViewProps, 'keyboardShouldPersistTaps'>;
 
 export function Screen({
   children,
   scrollable = true,
-  edges = ['left', 'right', 'bottom'],
+  edges = ['top', 'left', 'right'],
   contentContainerStyle,
   style,
   keyboardAvoiding = true,
   extraTopPadding = SCREEN_EXTRA_TOP_PADDING,
+  safeBottom = false,
   keyboardShouldPersistTaps = 'handled',
 }: ScreenProps) {
   const theme = useTheme();
-  const { insets, scrollContentStyle } = useScreenInsets();
+  const { insets } = useScreenInsets();
 
-  const topPadding = insets.top + extraTopPadding;
-  const bottomPadding = Math.max(insets.bottom, scrollContentStyle.paddingBottom as number);
+  const safeEdges: Edge[] = safeBottom ? [...edges, 'bottom'] : edges;
 
   const paddedContentStyle: ViewStyle = {
-    paddingTop: topPadding,
-    paddingBottom: bottomPadding,
-    paddingHorizontal: scrollContentStyle.paddingHorizontal,
+    paddingTop: extraTopPadding,
+    paddingBottom: safeBottom
+      ? Math.max(insets.bottom, SCREEN_HORIZONTAL_PADDING)
+      : SCREEN_HORIZONTAL_PADDING,
+    paddingHorizontal: SCREEN_HORIZONTAL_PADDING,
   };
 
   const content = scrollable ? (
     <ScrollView
+      style={styles.flex}
       contentContainerStyle={[paddedContentStyle, contentContainerStyle]}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       showsVerticalScrollIndicator={false}>
@@ -72,7 +78,7 @@ export function Screen({
   return (
     <SafeAreaView
       style={[styles.flex, { backgroundColor: theme.colors.background }, style]}
-      edges={edges}>
+      edges={safeEdges}>
       {body}
     </SafeAreaView>
   );

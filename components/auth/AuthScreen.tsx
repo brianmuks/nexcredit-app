@@ -10,9 +10,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
+import { SCREEN_EXTRA_TOP_PADDING, SCREEN_HORIZONTAL_PADDING } from '@/constants/layout';
 import { useScreenInsets } from '@/hooks/useScreenInsets';
 import { useTheme } from '@/hooks/useTheme';
-import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout';
 
 type AuthScreenProps = {
   children: React.ReactNode;
@@ -22,7 +22,7 @@ type AuthScreenProps = {
 
 export function AuthScreen({ children, showBack = false, onBack }: AuthScreenProps) {
   const theme = useTheme();
-  const { top, insets } = useScreenInsets();
+  const { insets } = useScreenInsets();
 
   const handleBack = () => {
     if (onBack) {
@@ -39,12 +39,12 @@ export function AuthScreen({ children, showBack = false, onBack }: AuthScreenPro
   return (
     <SafeAreaView
       style={[styles.root, { backgroundColor: theme.colors.background }]}
-      edges={['left', 'right', 'bottom']}>
+      edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-        <View style={[styles.inner, { paddingTop: top }]}>
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
+        <View style={[styles.inner, { paddingTop: SCREEN_EXTRA_TOP_PADDING }]}>
           {showBack ? (
             <Pressable
               onPress={handleBack}

@@ -1,8 +1,18 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 import type { ApiError } from '@/types/auth';
 
 export const TOKEN_KEY = 'auth_token';
+
+const isWeb = Platform.OS === 'web';
+
+function webStorage(): Storage | null {
+  if (typeof globalThis !== 'undefined' && 'localStorage' in globalThis) {
+    return globalThis.localStorage;
+  }
+  return null;
+}
 
 /** Production API — override with EXPO_PUBLIC_API_URL in .env for local backends. */
 export const API_BASE_URL =
@@ -13,14 +23,25 @@ type RequestOptions = RequestInit & {
 };
 
 export async function getStoredToken(): Promise<string | null> {
+  if (isWeb) {
+    return webStorage()?.getItem(TOKEN_KEY) ?? null;
+  }
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
 
 export async function setStoredToken(token: string): Promise<void> {
+  if (isWeb) {
+    webStorage()?.setItem(TOKEN_KEY, token);
+    return;
+  }
   await SecureStore.setItemAsync(TOKEN_KEY, token);
 }
 
 export async function clearStoredToken(): Promise<void> {
+  if (isWeb) {
+    webStorage()?.removeItem(TOKEN_KEY);
+    return;
+  }
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 

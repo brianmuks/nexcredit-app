@@ -11,6 +11,7 @@ import {
   requestPhoneOtpApi,
   verifyPhoneOtpApi,
 } from '@/lib/auth-api';
+import { useLenderProductsStore } from '@/store/lender-products-store';
 import type { RegisterInput, User } from '@/types/auth';
 
 const USER_KEY = 'auth_user';
@@ -88,6 +89,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await clearStoredToken();
     await persistUser(null);
+    useLenderProductsStore.getState().clear();
     set({
       user: null,
       isAuthenticated: false,
