@@ -104,9 +104,9 @@ API will be available at `http://localhost:5000`.
 
 ### 3. Frontend (Expo)
 
-```bash
-cd frontend
+From the repository root:
 
+```bash
 # Install dependencies
 npm install
 
