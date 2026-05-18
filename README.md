@@ -1,6 +1,4 @@
-# bursary-credit-app
-# HelsB Credit
-View srs document: https://docs.google.com/document/d/1hIftvbS3OqSO-JR0shBdsTNDkd2FEST-GAyLS3RC86s/edit?usp=sharing
+ HelsB Credit
 
 > **Digitising a student-run peer loan network in Zambia.**  
 > Replace the WhatsApp group and the paper receipt book with a shared, trusted ledger.
@@ -31,11 +29,11 @@ Students on HELSB bursaries and stipends lend to each other informally. Today th
 ## What it is NOT (MVP scope)
 
 - ❌ Not a credit scoring system
-- ❌ Not a goods marketplace  
+- ❌ Not a goods marketplace
 - ❌ Not a mobile money integration
-- ❌ Not a HELSB API consumer (BC register is maintained manually by the student rep)
+- ❌ Not a HELSB API consumer — BC register is maintained manually by the student rep
 
-These are explicitly deferred. See [SRS v2.0]([./docs/HelsB_Credit_SRS_v2.0.docx](https://docs.google.com/document/d/1hIftvbS3OqSO-JR0shBdsTNDkd2FEST-GAyLS3RC86s/edit?usp=sharing)) for the full rationale.
+These are explicitly deferred. See [SRS v2.0](./docs/HelsB_Credit_SRS_v2.0.docx) for the full rationale.
 
 ---
 
@@ -43,68 +41,110 @@ These are explicitly deferred. See [SRS v2.0]([./docs/HelsB_Credit_SRS_v2.0.docx
 
 | Layer | Technology |
 |---|---|
-| Frontend | React PWA (Progressive Web App — no app store needed) |
-| Backend | Node.js + Express |
-| Database | PostgreSQL |
-| Auth | JWT |
-| Notifications | In-app + Africa's Talking SMS (Zambia) |
-| Hosting | Fly.io / Railway |
+| **Frontend** | Expo (React Native) — iOS, Android, and web from one codebase |
+| **Backend** | Python + Flask |
+| **Database** | MariaDB |
+| **Auth** | Flask-JWT-Extended |
+| **Notifications** | In-app + Africa's Talking SMS (Zambia) |
+
+---
+
+## Prerequisites
+
+- Python 3.10+
+- Node.js 18+ and npm
+- Expo CLI (`npm install -g expo-cli`)
+- MariaDB 10.6+
 
 ---
 
 ## Getting started
 
-### Prerequisites
-
-- Node.js 18+
-- PostgreSQL 14+
-- npm or yarn
-
-### Installation
+### 1. Clone the repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/your-org/helsb-credit.git
 cd helsb-credit
+```
+
+---
+
+### 2. Backend (Flask)
+
+```bash
+cd backend
+
+# Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env — see Environment variables section below
+
+# Create the database
+mysql -u root -p -e "CREATE DATABASE helsb_credit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# Run migrations
+flask db upgrade
+
+# Seed demo data (20 fictitious students + 10 sample loans)
+flask seed run
+
+# Start the development server
+flask run
+```
+
+API will be available at `http://localhost:5000`.
+
+---
+
+### 3. Frontend (Expo)
+
+```bash
+cd frontend
 
 # Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your database credentials and JWT secret
-
-# Run database migrations
-npm run db:migrate
-
-# Seed demo data (20 fictitious students + 10 sample loans)
-npm run db:seed
-
-# Start the development server
-npm run dev
+# Start the Expo development server
+npx expo start
 ```
 
-The app will be available at `http://localhost:3000`.
+Then:
+- Press `a` to open on Android emulator
+- Press `i` to open on iOS simulator
+- Scan the QR code with the Expo Go app on your physical device
 
 ---
 
 ## Environment variables
 
+Create a `.env` file inside `backend/`:
+
 ```env
+# Flask
+FLASK_APP=app.py
+FLASK_ENV=development
+SECRET_KEY=your-secret-key-here
+
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/helsb_credit
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=helsb_credit
+DB_USER=root
+DB_PASSWORD=your-db-password
 
-# Auth
-JWT_SECRET=your-secret-key-here
-JWT_EXPIRES_IN=7d
+# JWT
+JWT_SECRET_KEY=your-jwt-secret-here
+JWT_ACCESS_TOKEN_EXPIRES=86400      # 24 hours in seconds
 
-# SMS (optional — in-app notifications work without this)
+# SMS — optional, in-app notifications work without this
 AFRICAS_TALKING_API_KEY=your-key
 AFRICAS_TALKING_USERNAME=your-username
-
-# App
-PORT=3000
-NODE_ENV=development
 ```
 
 ---
@@ -113,38 +153,60 @@ NODE_ENV=development
 
 ```
 helsb-credit/
-├── client/                  # React PWA frontend
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── PreLoanCheck.jsx     # The core feature
-│   │   │   ├── LogLoan.jsx
-│   │   │   ├── BorrowerDashboard.jsx
-│   │   │   ├── LenderDashboard.jsx
-│   │   │   └── RepDashboard.jsx
-│   │   ├── components/
-│   │   └── App.jsx
-│   └── public/
 │
-├── server/                  # Node.js + Express API
+├── backend/                        # Python + Flask API
+│   ├── app.py                      # App factory and entry point
+│   ├── config.py                   # Environment config
+│   ├── requirements.txt
+│   ├── .env.example
+│   │
 │   ├── routes/
-│   │   ├── auth.js
-│   │   ├── students.js      # /students/:number/check — the key endpoint
-│   │   ├── loans.js
-│   │   └── bc-register.js
+│   │   ├── auth.py                 # POST /auth/register, /auth/login
+│   │   ├── students.py             # GET /students/<number>/check  ← core feature
+│   │   ├── loans.py                # POST /loans, PATCH /loans/<id>/repaid
+│   │   ├── bc_register.py          # BC register management (rep only)
+│   │   └── dashboard.py            # GET /dashboard/rep
+│   │
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── loan.py
+│   │   ├── bc_register.py
+│   │   └── audit_log.py
+│   │
 │   ├── middleware/
-│   │   ├── auth.js          # JWT verification
-│   │   └── roles.js         # Role-based access control
-│   ├── db/
-│   │   ├── migrations/
-│   │   └── seeds/
-│   └── index.js
+│   │   ├── auth.py                 # JWT verification decorator
+│   │   └── roles.py                # Role-based access control
+│   │
+│   └── migrations/                 # Flask-Migrate / Alembic
 │
-├── docs/
-│   └── HelsB_Credit_SRS_v2.0.docx
+├── frontend/                       # Expo (React Native)
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   ├── login.tsx
+│   │   │   └── register.tsx
+│   │   ├── (borrower)/
+│   │   │   └── dashboard.tsx       # Debt dashboard
+│   │   ├── (lender)/
+│   │   │   ├── check.tsx           # Pre-loan check — the core screen
+│   │   │   ├── log-loan.tsx
+│   │   │   └── dashboard.tsx
+│   │   └── (rep)/
+│   │       ├── dashboard.tsx
+│   │       └── bc-register.tsx
+│   │
+│   ├── components/
+│   │   ├── BCStatusBadge.tsx       # Active BC / Inactive / Not found
+│   │   ├── LoanCard.tsx
+│   │   └── PreLoanSummary.tsx
+│   │
+│   ├── services/
+│   │   └── api.ts                  # Axios client pointing to Flask backend
+│   │
+│   ├── app.json
+│   └── package.json
 │
-├── .env.example
-├── package.json
-└── README.md
+└── docs/
+    └── HelsB_Credit_SRS_v2.0.docx
 ```
 
 ---
@@ -152,21 +214,22 @@ helsb-credit/
 ## Core API endpoints
 
 ```
-POST   /auth/register                     Create user account
-POST   /auth/login                        Authenticate → JWT
+POST   /auth/register                      Create user account
+POST   /auth/login                         Authenticate → JWT
 
-GET    /students/:student_number/check    Pre-loan check (BC status + loan count)
-GET    /students/:id/profile              Student profile
+GET    /students/<student_number>/check    Pre-loan check (BC status + loan count)
+GET    /students/<id>/profile              Student profile
 
-POST   /loans                             Log a new loan
-PATCH  /loans/:id/repaid                  Mark loan as repaid
-GET    /loans?status=open                 List loans with filters
+POST   /loans                              Log a new loan (lender or rep)
+PATCH  /loans/<id>/repaid                  Mark loan as repaid
+GET    /loans?status=open                  List loans with filters
 
-POST   /bc-register                       Add student to BC register (rep only)
-GET    /dashboard/rep                     Rep summary dashboard
+POST   /bc-register                        Add student to BC register (rep only)
+PATCH  /bc-register/<id>                   Update BC record (rep only)
+GET    /dashboard/rep                      Rep summary
 ```
 
-The `/students/:student_number/check` endpoint is the most important in the system. It returns:
+The `/students/<student_number>/check` endpoint is the most critical in the system. It returns:
 
 ```json
 {
@@ -178,6 +241,63 @@ The `/students/:student_number/check` endpoint is the most important in the syst
   "has_overdue": true,
   "overdue_days": 12
 }
+```
+
+---
+
+## Database schema (MariaDB)
+
+```sql
+-- Source of truth for who is on BC
+CREATE TABLE bc_register (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  student_number  VARCHAR(20) NOT NULL UNIQUE,
+  full_name       VARCHAR(120) NOT NULL,
+  university      VARCHAR(100) NOT NULL,
+  bc_type         ENUM('bursary', 'stipend', 'both') NOT NULL,
+  academic_year   VARCHAR(10) NOT NULL,
+  is_active       BOOLEAN DEFAULT TRUE,
+  added_by        INT,
+  created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Everyone with an account
+CREATE TABLE users (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  student_number  VARCHAR(20),
+  full_name       VARCHAR(120) NOT NULL,
+  university      VARCHAR(100),
+  role            ENUM('borrower', 'lender', 'rep') NOT NULL,
+  password_hash   VARCHAR(255) NOT NULL,
+  created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_number) REFERENCES bc_register(student_number)
+);
+
+-- Every loan ever logged — never deleted, only status-changed
+CREATE TABLE loans (
+  id              CHAR(36) PRIMARY KEY,           -- UUID
+  reference_code  VARCHAR(12) NOT NULL UNIQUE,    -- e.g. HC-2025-0042
+  lender_id       INT NOT NULL,
+  borrower_id     INT NOT NULL,
+  amount_zmw      DECIMAL(10,2) NOT NULL,
+  logged_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+  due_date        DATE NOT NULL,
+  status          ENUM('open','repaid','overdue','disputed') DEFAULT 'open',
+  note            TEXT,
+  FOREIGN KEY (lender_id)   REFERENCES users(id),
+  FOREIGN KEY (borrower_id) REFERENCES users(id)
+);
+
+-- Full audit trail — every status change timestamped
+CREATE TABLE audit_log (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  entity_type     VARCHAR(50),
+  entity_id       VARCHAR(36),
+  action          VARCHAR(100),
+  changed_by      INT,
+  changed_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  metadata        JSON
+);
 ```
 
 ---
@@ -196,7 +316,7 @@ The `/students/:student_number/check` endpoint is the most important in the syst
 
 A 3-minute judge pitch:
 
-1. **Show the problem** — open a WhatsApp screenshot of a student asking for a loan in a group chat. *"This is how it works today. No one knows how many loans this person already has."*
+1. **Show the problem** — open a WhatsApp screenshot of a student asking for a loan in a group. *"This is how it works today. No one knows how many loans this person already has."*
 
 2. **Rep dashboard** — log in as the rep. *"The student who kept the notebook now has this."*
 
@@ -207,26 +327,6 @@ A 3-minute judge pitch:
 5. **Borrower dashboard** — show Chanda's view: 4 loans, amounts, due dates. *"No more surprise defaults."*
 
 6. **Rep overdue view** — show loans flagged red. *"The rep doesn't chase on WhatsApp anymore."*
-
----
-
-## Data model (simplified)
-
-```
-bc_register       — the source of truth for who is on BC
-  id, student_number (unique), full_name, university,
-  bc_type, academic_year, is_active
-
-users             — everyone with an account
-  id, student_number (FK), full_name, role, password_hash
-
-loans             — every loan ever logged (never deleted)
-  id (UUID), lender_id, borrower_id, amount_zmw,
-  due_date, status (open/repaid/overdue/disputed)
-
-audit_log         — every status change, timestamped
-  entity_type, entity_id, action, changed_by, changed_at
-```
 
 ---
 
@@ -251,8 +351,6 @@ The system being digitised already exists — students have been running this in
 ---
 
 ## Contributing
-
-This is a hackathon project. If you want to build on it:
 
 1. Fork the repo
 2. Create a feature branch (`git checkout -b feature/sms-reminders`)
