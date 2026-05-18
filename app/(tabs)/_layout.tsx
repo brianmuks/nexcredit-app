@@ -35,6 +35,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName="marketplace"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.colors.tabActive,
@@ -58,8 +59,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="marketplace"
+        options={{
+          title: 'Marketplace',
+          tabBarIcon: ({ color }) => <TabBarIcon name="shopping-bag" color={color} />,
         }}
       />
       <Tabs.Screen
