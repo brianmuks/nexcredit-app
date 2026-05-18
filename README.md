@@ -1,5 +1,6 @@
 # bursary-credit-app
 # HelsB Credit
+View srs document: https://docs.google.com/document/d/1hIftvbS3OqSO-JR0shBdsTNDkd2FEST-GAyLS3RC86s/edit?usp=sharing
 
 > **Digitising a student-run peer loan network in Zambia.**  
 > Replace the WhatsApp group and the paper receipt book with a shared, trusted ledger.
