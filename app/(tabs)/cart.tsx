@@ -1,4 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { router } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,9 +16,13 @@ export default function CartScreen() {
     return (
       <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+            <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+          </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text, fontFamily: theme.fontFamily.headline }]}>
             Cart
           </Text>
+          <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyState}>
           <MaterialIcons name="shopping-cart" size={56} color={colors.border} />
@@ -27,6 +32,13 @@ export default function CartScreen() {
           <Text style={[styles.emptyDesc, { color: colors.textMuted, fontFamily: theme.fontFamily.body }]}>
             Browse the Marketplace and add items to get started.
           </Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/marketplace')}
+            style={({ pressed }) => [styles.browseBtn, { backgroundColor: colors.primary }, pressed && { opacity: 0.88 }]}>
+            <Text style={[styles.browseBtnText, { fontFamily: theme.fontFamily.headline }]}>
+              Browse Marketplace
+            </Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -35,6 +47,9 @@ export default function CartScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text, fontFamily: theme.fontFamily.headline }]}>
           Cart ({totalItems})
         </Text>
@@ -94,11 +109,12 @@ export default function CartScreen() {
           <Text style={[styles.summaryLabel, { color: colors.textMuted, fontFamily: theme.fontFamily.body }]}>
             Subtotal ({totalItems} items)
           </Text>
-          <Text style={[styles.summaryValue, { color: colors.text, fontFamily: theme.fontFamily.headline }]}>
-            ${totalPrice.toLocaleString()}
+            <Text style={[styles.summaryValue, { color: colors.text, fontFamily: theme.fontFamily.headline }]}>
+            K{totalPrice.toLocaleString()}
           </Text>
         </View>
         <Pressable
+          onPress={() => router.push('/checkout')}
           style={({ pressed }) => [styles.checkoutBtn, { backgroundColor: colors.primary }, pressed && { opacity: 0.88 }]}>
           <Text style={[styles.checkoutText, { fontFamily: theme.fontFamily.headline }]}>
             Proceed to Checkout
@@ -119,11 +135,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  backBtn: { padding: 4 },
   headerTitle: { fontSize: 22, fontWeight: '700' },
   clearText: { fontSize: 14, fontWeight: '500' },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontSize: 20, fontWeight: '700' },
   emptyDesc: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  browseBtn: { borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 8 },
+  browseBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   item: {
     flexDirection: 'row',
     marginHorizontal: 16,
