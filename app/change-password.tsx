@@ -5,6 +5,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Screen, Text, TextField } from '@/components/ui';
 import { useTheme } from '@/hooks/useTheme';
+import { updatePasswordApi } from '@/lib/auth-api';
 
 export default function ChangePasswordScreen() {
   const theme = useTheme();
@@ -14,7 +15,7 @@ export default function ChangePasswordScreen() {
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [saving, setSaving] = React.useState(false);
 
-  const onSave = () => {
+  const onSave = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert('Missing details', 'Fill in all password fields.');
       return;
@@ -28,11 +29,18 @@ export default function ChangePasswordScreen() {
       return;
     }
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      await updatePasswordApi(currentPassword, newPassword);
       Alert.alert('Password updated', 'Your password has been changed successfully.');
       router.back();
-    }, 900);
+    } catch (err: unknown) {
+      const message =
+        (err as { message?: string })?.message ??
+        'Could not update password. Please try again.';
+      Alert.alert('Error', message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

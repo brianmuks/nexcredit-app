@@ -70,6 +70,22 @@ export async function verifyPhoneOtpApi(
   return data;
 }
 
+export async function updatePasswordApi(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  if (USE_MOCK) {
+    await new Promise((r) => setTimeout(r, 600));
+    return;
+  }
+
+  await apiRequest<void>('/auth/password', {
+    method: 'PATCH',
+    auth: true,
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 export async function fetchCurrentUser(): Promise<User | null> {
   if (USE_MOCK) {
     return null;
