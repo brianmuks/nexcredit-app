@@ -1,10 +1,12 @@
 import { Redirect, Tabs } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LoadingScreen } from '@/components/ui';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/auth-store';
+import { useCartStore } from '@/store/cart-store';
 
 type TabIconProps = {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -14,6 +16,36 @@ type TabIconProps = {
 function TabBarIcon({ name, color }: TabIconProps) {
   return <FontAwesome size={22} style={{ marginBottom: -2 }} name={name} color={color} />;
 }
+
+function CartTabIcon({ color }: { color: string }) {
+  const totalItems = useCartStore((s) => s.totalItems);
+  const theme = useTheme();
+  return (
+    <View>
+      <FontAwesome size={22} style={{ marginBottom: -2 }} name="shopping-cart" color={color} />
+      {totalItems > 0 && (
+        <View style={[badgeStyles.badge, { backgroundColor: theme.colors.primary }]}>
+          <Text style={badgeStyles.badgeText}>{totalItems > 9 ? '9+' : totalItems}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const badgeStyles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+});
 
 const TAB_BAR_CONTENT_HEIGHT = 56;
 
@@ -35,6 +67,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName="marketplace"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.colors.tabActive,
@@ -58,8 +91,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="marketplace"
+        options={{
+          title: 'Marketplace',
+          tabBarIcon: ({ color }) => <TabBarIcon name="shopping-bag" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -80,7 +119,7 @@ export default function TabLayout() {
         name="cart"
         options={{
           title: 'Cart',
-          tabBarIcon: ({ color }) => <TabBarIcon name="shopping-cart" color={color} />,
+          tabBarIcon: ({ color }) => <CartTabIcon color={color} />,
         }}
       />
       <Tabs.Screen

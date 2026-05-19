@@ -83,6 +83,12 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: true, title: 'Modal' }} />
+            <Stack.Screen name="checkout" options={{ presentation: 'card', headerShown: false }} />
+            <Stack.Screen name="order-success" options={{ presentation: 'card', headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen name="change-password" options={{ presentation: 'card', headerShown: false }} />
+            <Stack.Screen name="live-chat" options={{ presentation: 'card', headerShown: false }} />
+            <Stack.Screen name="faq" options={{ presentation: 'card', headerShown: false }} />
+            <Stack.Screen name="policy" options={{ presentation: 'card', headerShown: false }} />
           </Stack>
         </NavigationThemeProvider>
       </AppThemeProvider>
